@@ -1,40 +1,45 @@
 const express = require("express");
-let tasks = require("./data");
-
+const db = require("./db/models");
+const uselessRoutes = require("./routes/useless");
+const taskRoutes = require("./routes/tasks");
 const app = express();
 
-// app.METHOD("/PATH", () => {
-//     // CODE
-// })
-
-// HOME: IM USELESS
-app.get("/home", (request, response) => {
-  console.log("HOOOMMMMEEEEEEE");
-  response.json({ message: "HELLO" });
+app.use(async (req, res, next) => {
+  console.log("I'm the first middleware");
+  const error = {
+    status: 500,
+    message: "NOOOOO!!!!!",
+  };
+  next();
+  //   const taskLength = await db.Task.count();
+  //   if (taskLength > 3) res.json({ message: "you dont have access" });
+  //   else next();
 });
 
-// PRODUCTS LIST ROUTE
-app.get("/tasks", (req, res) => {
-  res.json(tasks);
+// Middleware
+app.use(express.json());
+app.use(uselessRoutes);
+app.use("/tasks", taskRoutes);
+
+// NOT FOUND MIDDLEWARE
+app.use((req, res, next) => {
+  next({
+    status: 404,
+    message: "Path Not Found",
+  });
 });
 
-// PRODUCT DETAIL ROUTE
-app.get("/tasks/:taskId", (req, res) => {
-  console.log("🚀 ~ file: app.js ~ line 47 ~ app.get ~ req", req.params);
-  const foundTask = tasks.find((task) => task.id === +req.params.taskId);
-  if (foundTask) {
-    res.json(foundTask);
-  } else {
-    res.status(404).json({ message: "Task Not Found" });
-  }
+// ERROR HANDLING MIDDLEWARE: I SHOULD BE THE LAST ONE!!!!!!
+app.use((err, req, res, next) => {
+  res
+    .status(err.status ?? 500)
+    .json({ message: err.message ?? "Internal Server Error" });
 });
 
-// PRODUCT DELETE ROUTE
-app.delete("/tasks/:taskId", (req, res) => {
-  tasks = tasks.filter((task) => task.id !== +req.params.taskId);
-  res.status(204).end();
-});
+db.sequelize.sync();
+// db.sequelize.sync({ alter: true });
+// db.sequelize.sync({ force: true });
 
-app.listen(8001, () =>
-  console.log("The application is running on localhost:8001")
+app.listen(8000, () =>
+  console.log("The application is running on localhost:8000")
 );
